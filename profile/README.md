@@ -2,23 +2,85 @@
 
 **Autonomous AI research platform for verifiable trend intelligence on 0G.**
 
-Langclaw is a wallet-authenticated agent platform: chat, memory, API keys, prepaid usage billing, scheduled automation, and an OpenAI-compatible proxy to **0G Compute Router**. Its research engine **SignalGraph** turns one topic into live X, GitHub, Docs, and HackQuest signals through coordinated agents, stores evidence on **0G Storage**, and anchors brief hashes on **0G Chain**.
+Langclaw is a wallet-authenticated agent platform: chat, memory, API keys, prepaid usage billing, scheduled automation, and an OpenAI-compatible proxy to **0G Compute Router**. Enter one topic and Langclaw turns it into live X, GitHub, Docs, and HackQuest signals through coordinated agents, stores evidence on **0G Storage**, and anchors brief hashes on **0G Chain**.
 
-> **Langclaw** = product (dashboard + API + billing). **SignalGraph** = multi-agent research engine in the backend. **Two on-chain contracts:** `LangclawUsageVault` (deposits) and `SignalGraphRegistry` (research proof).
+> **Two on-chain contracts on 0G mainnet:** `LangclawUsageVault` (prepaid deposits) and `LangclawRegistry` (research proof; Solidity artifact: `SignalGraphRegistry`).
 
 ## Repositories
 
 Organization: [**Langclaw-AI**](https://github.com/Langclaw-AI)
 
-| Repository | Stack | Port | README |
-| ---------- | ----- | ---- | ------ |
-| [frontend](https://github.com/Langclaw-AI/frontend) | Next.js 16, React 19, RainbowKit, AI SDK | 3000 | [README](https://github.com/Langclaw-AI/frontend/blob/master/README.md) |
-| [backend](https://github.com/Langclaw-AI/backend) | Node HTTP API, TypeScript, Supabase | 3001 | [README](https://github.com/Langclaw-AI/backend/blob/main/README.md) |
-| [contracts](https://github.com/Langclaw-AI/contracts) | Foundry, `LangclawUsageVault` | — | [README](https://github.com/Langclaw-AI/contracts/blob/master/README.md) |
+| Repository                                            | Stack                                    | Port | README                                                                   |
+| ----------------------------------------------------- | ---------------------------------------- | ---- | ------------------------------------------------------------------------ |
+| [frontend](https://github.com/Langclaw-AI/frontend)   | Next.js 16, React 19, RainbowKit, AI SDK | 3000 | [README](https://github.com/Langclaw-AI/frontend/blob/master/README.md)  |
+| [backend](https://github.com/Langclaw-AI/backend)     | Node HTTP API, TypeScript, Supabase      | 3001 | [README](https://github.com/Langclaw-AI/backend/blob/main/README.md)     |
+| [contracts](https://github.com/Langclaw-AI/contracts) | Foundry, `LangclawUsageVault`            | —    | [README](https://github.com/Langclaw-AI/contracts/blob/master/README.md) |
+
+This workspace can be a **monorepo** with `frontend/`, `backend/`, and `contracts/` as sibling folders, or three separate clones from the org above.
+
+## For judges / reviewers
+
+**Fastest path (no local backend):** open the deployed app if your team shared a URL, connect an EVM wallet on **0G mainnet (chain ID `16661`)**, sign the Langclaw login message, open **Chat** in agent/research mode, and run a short topic (e.g. `0G decentralized storage trends`). Watch for **0G Compute**, **0G Storage**, and **0G Chain** badges in the agent trace when those envs are enabled on the server.
+
+**5-minute local smoke test**
+
+1. `curl http://localhost:3001/health` → `{"ok":true,"service":"signalgraph-backend"}` (legacy service name in JSON)
+2. Open [http://localhost:3000](http://localhost:3000) → connect wallet → sign in
+3. Chat or `POST /api/discover` with a one-line topic (wallet session or `Authorization: Bearer lck_live_...`)
+4. Optional billing: send native **0G** to the vault below → `POST /api/usage/deposit/verify`
+
+**Deployed contracts (0G mainnet, chain ID `16661`)**
+
+| Contract               | Address                                      | Explorer                                                                                                      |
+| ---------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **LangclawUsageVault** | `0xd6a6773d653049bc4076aac820f98bd48308596a` | [ChainScan](https://chainscan.0g.ai/address/0xd6a6773d653049bc4076aac820f98bd48308596a)                    |
+| **LangclawRegistry**   | Deploy with `npm run deploy:registry` in backend | Set `SIGNALGRAPH_REGISTRY_ADDRESS` in backend `.env` (env name is legacy; contract = research proof) |
+
+**Getting 0G tokens**
+
+- Native **0G** (gas + vault deposits): buy on CEX and withdraw to 0G mainnet, bridge via [XSwap](https://xswap.link/bridge?toChain=16661), or swap on [0G Hub](https://hub.0g.ai/swap). See [How to get 0G](https://docs.0g.ai/introduction/how-to-get-0g).
+- **Compute Router** billing: create an API key and fund usage at [pc.0g.ai](https://pc.0g.ai) (`OG_COMPUTE_API_KEY` in backend `.env`).
+
+**Minimum vs full local setup**
+
+| Goal                         | Required env / tools                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| Chat + `/v1/*` 0G proxy      | `SUPABASE_*`, `LANGCLAW_API_KEY_PEPPER`, `OG_COMPUTE_API_KEY`                        |
+| Full research (`/api/discover`) | Above + [OpenClaw CLI](https://docs.openclaw.ai/install) + provider keys (Brave/GitHub/Tavily, etc.) |
+| On-chain proof (storage + registry) | `OG_STORAGE_*`, `OG_CHAIN_*`, `SIGNALGRAPH_REGISTRY_ADDRESS`, funded wallets        |
+| Prepaid usage vault          | `LANGCLAW_USAGE_VAULT_ADDRESS` = deployed vault above                                |
+
+Video walkthrough: [DEMO_SCRIPT.md](https://github.com/Langclaw-AI/backend/blob/main/docs/DEMO_SCRIPT.md).
+
+## 0G integration
+
+| 0G module            | Where Langclaw uses it                         | How it supports the product                                                                 |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **0G Compute Router** | `GET/POST /v1/*`, chat stream, research final answer | OpenAI-compatible inference on 0G models; primary writer for user-facing conclusions when configured |
+| **0G Storage**       | Research evidence bundles after `/api/discover` | Durable, decentralized proof artifacts linked from each brief                               |
+| **0G Chain**         | `LangclawRegistry.registerBrief`, `LangclawUsageVault` | On-chain brief hash + storage URI anchor; native 0G prepaid deposits for usage billing      |
+
+Docs: [0G overview](https://docs.0g.ai/) · [Compute Router](https://docs.0g.ai/developer-hub/building-on-0g/compute-network/router/overview) · [Storage](https://docs.0g.ai/docs/concepts/storage) · [0G Chain](https://docs.0g.ai/docs/concepts/chain) · [Mainnet](https://docs.0g.ai/developer-hub/mainnet/mainnet-overview)
 
 ## Quick start
 
-Clone the three repos (sibling folders work well locally):
+**Option A — monorepo (this layout)**
+
+```bash
+# 1. Backend
+cd backend && cp .env.example .env
+# Set SUPABASE_*, LANGCLAW_API_KEY_PEPPER, OG_COMPUTE_API_KEY at minimum
+# Optional: LANGCLAW_USAGE_VAULT_ADDRESS=0xd6a6773d653049bc4076aac820f98bd48308596a
+npm install
+# Apply Supabase migrations (see backend/supabase/migrations)
+npm run dev
+
+# 2. Frontend (new terminal)
+cd frontend && cp .env.example .env.local
+pnpm install && pnpm dev
+```
+
+**Option B — three org repos (sibling folders)**
 
 ```bash
 git clone https://github.com/Langclaw-AI/backend.git
@@ -26,16 +88,7 @@ git clone https://github.com/Langclaw-AI/frontend.git
 git clone https://github.com/Langclaw-AI/contracts.git
 ```
 
-```bash
-# 1. Backend
-cd backend && cp .env.example .env
-# Set SUPABASE_*, LANGCLAW_API_KEY_PEPPER, OG_COMPUTE_API_KEY at minimum
-npm install && npm run dev
-
-# 2. Frontend (new terminal)
-cd frontend && cp .env.example .env.local
-pnpm install && pnpm dev
-```
+Then follow the same `backend` / `frontend` steps as above.
 
 ```bash
 curl http://localhost:3001/health
@@ -53,38 +106,38 @@ User → Frontend (:3000) → Backend API (:3001)
                               ├─ Providers (X/Brave, GitHub, Tavily, HackQuest)
                               ├─ 0G Compute Router (/v1/*)
                               ├─ 0G Storage (evidence bundles)
-                              ├─ SignalGraphRegistry (brief hash)
+                              ├─ LangclawRegistry (brief hash)
                               └─ LangclawUsageVault (prepaid 0G deposits)
 ```
 
-### SignalGraph workflow
+### Research workflow
 
-Entry: `runSignalGraphWorkflow(topic)` → `POST /api/discover` or `/api/discover/stream` (NDJSON).
+Entry: `runSignalGraphWorkflow(topic)` (internal name) → `POST /api/discover` or `/api/discover/stream` (NDJSON).
 
-| Step | Runtime | Responsibility |
-| ---- | ------- | -------------- |
-| Planner | OpenClaw | Search plan for X, GitHub, Docs, HackQuest |
-| Discovery | TypeScript | Live source fetch (API keys server-side) |
-| Source normalizer | TypeScript | Source cards and excerpts |
-| Trend scorer | OpenClaw | Rank trends |
-| Evidence packager | OpenClaw | Claim map, bundle summary |
-| Verifier | OpenClaw | Unsupported claims, brief hash input |
-| Final conclusion | 0G Compute → OpenClaw → fallback | User-facing answer |
-| 0G Storage / Chain | TypeScript | Upload bundle; `registerBrief` on registry |
+| Step               | Runtime                          | Responsibility                             |
+| ------------------ | -------------------------------- | ------------------------------------------ |
+| Planner            | OpenClaw                         | Search plan for X, GitHub, Docs, HackQuest |
+| Discovery          | TypeScript                       | Live source fetch (API keys server-side)   |
+| Source normalizer  | TypeScript                       | Source cards and excerpts                  |
+| Trend scorer       | OpenClaw                         | Rank trends                                |
+| Evidence packager  | OpenClaw                         | Claim map, bundle summary                  |
+| Verifier           | OpenClaw                         | Unsupported claims, brief hash input       |
+| Final conclusion   | 0G Compute → OpenClaw → fallback | User-facing answer                         |
+| 0G Storage / Chain | TypeScript                       | Upload bundle; `registerBrief` on registry   |
 
 OpenClaw skills: [backend/openclaw/skills](https://github.com/Langclaw-AI/backend/tree/main/openclaw/skills). Install: [OpenClaw docs](https://docs.openclaw.ai/install).
 
 ### Product features
 
-| Feature | UI | API |
-| ------- | -- | --- |
-| Chat | `/chat` | `POST /api/chat/stream`, `/api/chat/sessions` |
-| Research | Chat (agent mode) | `POST /api/discover`, `/api/discover/stream` |
-| Memory | `/memory` | `POST /api/memory` |
-| API keys | `/key` | `POST /api/api-keys` |
-| Usage / billing | `/usage` | `POST /api/usage/*` |
-| Automation | `/task`, `/settings` | `POST /api/automation/*` |
-| 0G models | — | `GET/POST /v1/*` (alias `/api/0g/*`) |
+| Feature         | UI                   | API                                           |
+| --------------- | -------------------- | --------------------------------------------- |
+| Chat            | `/chat`              | `POST /api/chat/stream`, `/api/chat/sessions` |
+| Research        | Chat (agent mode)    | `POST /api/discover`, `/api/discover/stream`  |
+| Memory          | `/memory`            | `POST /api/memory`                            |
+| API keys        | `/key`               | `POST /api/api-keys`                          |
+| Usage / billing | `/usage`             | `POST /api/usage/*`                           |
+| Automation      | `/task`, `/settings` | `POST /api/automation/*`                      |
+| 0G models       | —                    | `GET/POST /v1/*` (alias `/api/0g/*`)          |
 
 ## Authentication
 
@@ -104,16 +157,20 @@ Full spec: [API_REFERENCE.md](https://github.com/Langclaw-AI/backend/blob/main/d
 
 ## Smart contracts (0G mainnet, chain ID `16661`)
 
-| Contract | Repository | Purpose |
-| -------- | ---------- | ------- |
-| **LangclawUsageVault** | [contracts](https://github.com/Langclaw-AI/contracts) | Native 0G deposits; backend-authorized withdrawals |
-| **SignalGraphRegistry** | [backend/contracts](https://github.com/Langclaw-AI/backend/blob/main/contracts/SignalGraphRegistry.sol) | `registerBrief(hash, storageUri)` for research proof |
+| Contract               | Repository / source                                                                                     | Purpose                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **LangclawUsageVault** | [contracts](https://github.com/Langclaw-AI/contracts)                                                   | Native 0G deposits; backend-authorized withdrawals   |
+| **LangclawRegistry**   | [backend/contracts/SignalGraphRegistry.sol](https://github.com/Langclaw-AI/backend/blob/main/contracts/SignalGraphRegistry.sol) | `registerBrief(hash, storageUri)` for research proof |
+
+**Deployed (mainnet)**
+
+- **LangclawUsageVault:** `0xd6a6773d653049bc4076aac820f98bd48308596a` — [ChainScan](https://chainscan.0g.ai/address/0xd6a6773d653049bc4076aac820f98bd48308596a)
 
 **Billing flow:** user deposits 0G to vault → `POST /api/usage/deposit/verify` credits off-chain neuron balance → usage charges deduct ledger. Router (`OG_COMPUTE_API_KEY`) is funded separately on [pc.0g.ai](https://pc.0g.ai).
 
 **Withdrawal:** backend calls `authorizeWithdrawal` on vault (TBD: full automation); user calls `withdraw(amount)`.
 
-Deploy vault:
+Deploy vault (if not using the address above):
 
 ```bash
 git clone https://github.com/Langclaw-AI/contracts.git && cd contracts
@@ -134,12 +191,12 @@ Set `LANGCLAW_USAGE_VAULT_ADDRESS` and `SIGNALGRAPH_REGISTRY_ADDRESS` in [backen
 
 ## Deployment
 
-| Service | Notes |
-| ------- | ----- |
-| Frontend | Set `NEXT_PUBLIC_SIGNALGRAPH_API_URL` to public API |
-| Backend | `npm run build && npm start`; `PORT` default 3001 |
+| Service  | Notes                                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------ |
+| Frontend | Set `NEXT_PUBLIC_SIGNALGRAPH_API_URL` to public API (env name is legacy)                         |
+| Backend  | `npm run build && npm start`; `PORT` default 3001                                                |
 | Supabase | Apply [backend migrations](https://github.com/Langclaw-AI/backend/tree/main/supabase/migrations) |
-| 0G | `OG_COMPUTE_API_KEY`, storage/chain keys as needed |
+| 0G       | `OG_COMPUTE_API_KEY`, storage/chain keys as needed                                               |
 
 **Smoke tests after deploy**
 
@@ -163,17 +220,17 @@ Spec for vault requirements: [SMART_CONTRACT_TEAM_NOTES.md](https://github.com/L
 ## Prerequisites
 
 - Node.js 20+, pnpm (frontend), npm (backend)
-- Supabase project
+- Supabase project + applied migrations
 - Optional: [OpenClaw CLI](https://docs.openclaw.ai/install), [Foundry](https://book.getfoundry.sh/), 0G API keys and funded wallets
 
 ## Additional docs ([backend](https://github.com/Langclaw-AI/backend))
 
-| Document | Description |
-| -------- | ----------- |
-| [API_REFERENCE.md](https://github.com/Langclaw-AI/backend/blob/main/docs/API_REFERENCE.md) | Full HTTP API |
-| [SIGNALGRAPH_BLUEPRINT.md](https://github.com/Langclaw-AI/backend/blob/main/SIGNALGRAPH_BLUEPRINT.md) | Hackathon blueprint |
-| [DEMO_SCRIPT.md](https://github.com/Langclaw-AI/backend/blob/main/docs/DEMO_SCRIPT.md) | 3-minute demo script |
-| [openclaw/README.md](https://github.com/Langclaw-AI/backend/blob/main/openclaw/README.md) | OpenClaw workspace |
+| Document                                                                                              | Description                    |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------ |
+| [API_REFERENCE.md](https://github.com/Langclaw-AI/backend/blob/main/docs/API_REFERENCE.md)            | Full HTTP API                  |
+| [SIGNALGRAPH_BLUEPRINT.md](https://github.com/Langclaw-AI/backend/blob/main/SIGNALGRAPH_BLUEPRINT.md) | Hackathon blueprint (legacy filename) |
+| [DEMO_SCRIPT.md](https://github.com/Langclaw-AI/backend/blob/main/docs/DEMO_SCRIPT.md)                | 3-minute demo script           |
+| [openclaw/README.md](https://github.com/Langclaw-AI/backend/blob/main/openclaw/README.md)             | OpenClaw workspace             |
 
 ## Links
 
